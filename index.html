@@ -40,8 +40,11 @@
     </nav>
 
     <div class="flex items-center gap-2 shrink-0">
-      <span id="top-badge" class="px-3 py-1.5 text-xs font-mono font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-500/40 rounded-lg">
-        MODEL AI 1.3 · 5 132 288 ПАРАМЕТРОВ · CoT МЫШЛЕНИЕ
+      <button type="button" id="btn-download-header" class="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg cursor-pointer transition-colors">
+        ⬇ Скачать полную модель с весами (.bin · 20.53 МБ)
+      </button>
+      <span id="top-badge" class="hidden sm:inline-block px-3 py-1.5 text-xs font-mono font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-500/40 rounded-lg">
+        MODEL AI 1.3 · 5 132 288 ПАРАМЕТРОВ
       </span>
     </div>
   </header>
@@ -142,11 +145,15 @@
             <div class="flex justify-between"><span>Self-Attention QKV (3×256²):</span><span class="text-blue-300">196 608</span></div>
             <div class="flex justify-between"><span>Memory Projection (100K×8):</span><span class="text-blue-300">800 000</span></div>
             <div class="flex justify-between"><span>59-Key Classifier (59×256):</span><span class="text-blue-300">15 104</span></div>
-            <div class="pt-2.5 mt-2 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-1.5 font-sans">
-              <a href="codespace_server.mjs" download="model_ai_1_3_source_5132288.mjs" class="text-center py-2 px-2 bg-[#111827] hover:bg-slate-800 border border-slate-700 rounded-lg text-[11px] font-semibold text-blue-300">⬇ Исходный код (.mjs)</a>
-              <a href="model_ai_1_3_weights_5132288.json" download="model_ai_1_3_weights_5132288.json" class="text-center py-2 px-2 bg-[#111827] hover:bg-slate-800 border border-slate-700 rounded-lg text-[11px] font-semibold text-emerald-300">⬇ Параметры (.json)</a>
-              <button type="button" id="btn-dl-bin" class="py-2 px-2 bg-[#111827] hover:bg-slate-800 border border-slate-700 rounded-lg text-[11px] font-semibold text-amber-300 cursor-pointer">⬇ Тензоры (20.5 МБ)</button>
+            <div class="pt-2.5 mt-2 border-t border-slate-800 flex gap-2 font-sans">
+              <button type="button" id="btn-download-bin" class="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer">
+                ⬇ Скачать полные веса (.bin · 20.53 МБ)
+              </button>
+              <button type="button" id="btn-download-json" class="py-2 px-3 bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors cursor-pointer">
+                JSON
+              </button>
             </div>
+            <div id="download-status" class="hidden mt-2 px-2.5 py-1.5 rounded bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-[11px] font-mono"></div>
           </div>
 
           <div class="flex gap-2">
@@ -487,24 +494,76 @@
       document.getElementById('metric-samples').textContent = corpus.length.toLocaleString('ru-RU');
     });
 
-    document.getElementById('btn-dl-bin').addEventListener('click', () => {
+    function downloadModelWeights(format) {
+      const statusEl = document.getElementById('download-status');
+      if (format === 'json') {
+        const jsonStr = JSON.stringify({
+          format: 'MODEL_AI_1.3_CHECKPOINT_JSON',
+          modelName: 'Model AI 1.3',
+          version: '1.3.5-reasoning-5M',
+          totalParameters: TOTAL_FLOAT32_PARAMS,
+          samplesTrained: corpus.length,
+          cipherTable: ALL_ENTRIES,
+          coreSeeds: CORE_SEEDS
+        }, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'model_ai_1.3_5.13M_checkpoint.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        statusEl.textContent = '✓ Скачан чекпоинт: model_ai_1.3_5.13M_checkpoint.json';
+        statusEl.classList.remove('hidden');
+        return;
+      }
+
+      const headerObj = {
+        format: 'MODEL_AI_1.3_SAFETENSORS_BIN',
+        modelName: 'Model AI 1.3',
+        version: '1.3.5-reasoning-5M',
+        totalParameters: TOTAL_FLOAT32_PARAMS,
+        totalWeightBytes: TOTAL_FLOAT32_PARAMS * 4,
+        samplesTrained: corpus.length,
+        tensors: [
+          { name: 'token_embeddings', shape: [12000, 256], parameters: 3072000 },
+          { name: 'reasoning_mlp.w1', shape: [256, 2048], parameters: 524288 },
+          { name: 'reasoning_mlp.w2', shape: [2048, 256], parameters: 524288 },
+          { name: 'self_attention.qkv', shape: [3, 256, 256], parameters: 196608 },
+          { name: 'memory_projection', shape: [100000, 8], parameters: 800000 },
+          { name: 'cipher_classifier', shape: [59, 256], parameters: 15104 }
+        ],
+        cipherTable: ALL_ENTRIES
+      };
+      const enc = new TextEncoder();
+      const jsonBytes = enc.encode(JSON.stringify(headerObj));
       const blob = new Blob([
-        tokenEmbeddings,
-        reasoningMlpW1,
-        reasoningMlpW2,
-        attentionQKV,
-        memoryProjection,
-        cipherClassifier
+        enc.encode('MAI13BIN'),
+        jsonBytes,
+        tokenEmbeddings.buffer,
+        reasoningMlpW1.buffer,
+        reasoningMlpW2.buffer,
+        attentionQKV.buffer,
+        memoryProjection.buffer,
+        cipherClassifier.buffer
       ], { type: 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'model_ai_1_3_tensors_5132288.f32.bin';
+      a.download = 'model_ai_1.3_5.13M_weights.bin';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    });
+      statusEl.textContent = '✓ Скачаны полные веса: model_ai_1.3_5.13M_weights.bin (20.53 МБ · 5 132 288 Float32)';
+      statusEl.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-download-header').addEventListener('click', () => downloadModelWeights('bin'));
+    document.getElementById('btn-download-bin').addEventListener('click', () => downloadModelWeights('bin'));
+    document.getElementById('btn-download-json').addEventListener('click', () => downloadModelWeights('json'));
 
     trainScratchInBrowser(100000);
     renderMessages();

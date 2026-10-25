@@ -1,5 +1,5 @@
 {
-  "name": "CustomLayout AI Neural Server (Codespaces)",
+  "name": "CustomLayout-Scratch-30K Neural Server (Codespaces)",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
   "forwardPorts": [
     8000,
@@ -7,7 +7,7 @@
   ],
   "portsAttributes": {
     "8000": {
-      "label": "CustomLayout AI Server (API + Web UI)",
+      "label": "Scratch-30K Neural AI Server",
       "onAutoForward": "notify",
       "visibility": "public"
     }

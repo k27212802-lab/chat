@@ -1,5 +1,5 @@
 {
-  "name": "Model AI 1.3 (5.13M Params · Reasoning) Server",
+  "name": "Model AI (100M Params · 50M Context · Reasoning) Server",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
   "forwardPorts": [
     8000,
@@ -7,7 +7,7 @@
   ],
   "portsAttributes": {
     "8000": {
-      "label": "Model AI 1.3 (5.13M Params) Server",
+      "label": "Model AI (100M Params · 50M Context) Server",
       "onAutoForward": "notify",
       "visibility": "public"
     }

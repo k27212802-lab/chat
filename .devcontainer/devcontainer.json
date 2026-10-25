@@ -1,0 +1,17 @@
+{
+  "name": "CustomLayout AI Neural Server (Codespaces)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "forwardPorts": [
+    8000,
+    3000
+  ],
+  "portsAttributes": {
+    "8000": {
+      "label": "CustomLayout AI Server (API + Web UI)",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    }
+  },
+  "postCreateCommand": "node codespace_server.mjs --train-only",
+  "postStartCommand": "nohup node codespace_server.mjs > codespace_ai.log 2>&1 &"
+}

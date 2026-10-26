@@ -1,17 +1,35 @@
 {
-  "name": "Model AI (100M Params · 50M Context · Reasoning) Server",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "name": "OpenCode Root Server (anomalyco/opencode)",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "remoteUser": "root",
+  "containerUser": "root",
+  "privileged": true,
+  "capAdd": [
+    "SYS_ADMIN",
+    "NET_ADMIN",
+    "SYS_PTRACE"
+  ],
+  "securityOpt": [
+    "seccomp=unconfined"
+  ],
   "forwardPorts": [
-    8000,
+    4096,
     3000
   ],
   "portsAttributes": {
-    "8000": {
-      "label": "Model AI (100M Params · 50M Context) Server",
-      "onAutoForward": "notify",
+    "4096": {
+      "label": "OpenCode Web UI (root)",
+      "onAutoForward": "openBrowser",
       "visibility": "public"
     }
   },
-  "postCreateCommand": "node codespace_server.mjs --train-only",
-  "postStartCommand": "nohup node codespace_server.mjs > codespace_ai.log 2>&1 &"
+  "postCreateCommand": "npm install -g opencode-ai@latest",
+  "postStartCommand": "nohup opencode serve --port 4096 --hostname 0.0.0.0 > /var/log/opencode.log 2>&1 &",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
 }
